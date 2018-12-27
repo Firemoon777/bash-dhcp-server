@@ -1,6 +1,6 @@
 #!/bin/bash
 
-nc -l 0.0.0.0 -up 67 | stdbuf -o0 od -v -w1 -t x1 -An | (
+nc -l 0.0.0.0 -up 67 -w0 | stdbuf -o0 od -v -w1 -t x1 -An | (
 	msg=()
 	for i in {0..239}; do
 		read -r tmp
@@ -63,11 +63,13 @@ nc -l 0.0.0.0 -up 67 | stdbuf -o0 od -v -w1 -t x1 -An | (
 			for i in $(seq 0 $((${#opt[*]}-1))); do
 				printf "\x${opt[i]}" >> /tmp/dhcp.payload	
 		    done
-
-			cat /tmp/dhcp.payload | nc -ub 255.255.255.255 68 -s 192.168.43.1 -p 67
+			echo "Saved."
+			cat /tmp/dhcp.payload | nc -ub 255.255.255.255 68 -s 192.168.43.1 -p 67 -w0
+			echo "Sent."
 		;;
 		3) 
 			echo "REQUEST"	
 		;;
 	esac
 )
+echo "EXIT"
