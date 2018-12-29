@@ -14,22 +14,25 @@ GATEWAY="$SERVER"
 # Lease time in seconds
 LEASE_TIME=500
 
-while getopts "s:m:i:g:l:h" opt; do
+while getopts "s:m:i:g:l:hd" opt; do
 	case $opt in
 		s)
-
+			SERVER=$OPTARG
 		;;
 		m)
-
+			NETMASK=$OPTARG
 		;;
 		i)
-
+			CLIENT=$OPTARG
 		;;
 		g)
-
+			GATEWAY=$OPTARG
 		;;
 		l)
-
+			LEASE_TIME=$OPTARG
+		;;
+		d)
+			DEBUG=1
 		;;
 		h)
 			echo -e "Usage: $0 [option]..."
@@ -38,7 +41,8 @@ while getopts "s:m:i:g:l:h" opt; do
 			echo -e "\t-i <ip>   set ip address, proposed to client with dhcp (default $CLIENT)"
 			echo -e "\t-g <ip>   set gateway (default $GATEWAY)"
 			echo -e "\t-l <time> set lease time (default $LEASE_TIME)"
-			echo -e "\t-h <ip>   show this help"
+			echo -e "\t-h        show this help"
+			echo -e "\t-d        enable debug output"
 			exit
 		;;
 		*)
@@ -190,9 +194,6 @@ while [[ "$RUNNING" == "1" ]];  do
 		}
 
 		function write_dhcp() {
-				echo ${msg[*]} 
-				echo ${raw_opt[*]}
-
 				>/tmp/dhcp.payload
 				for i in $(seq 0 $((${#msg[*]}-1))); do
 					printf "\x${msg[i]}" >> /tmp/dhcp.payload 	
@@ -212,6 +213,8 @@ while [[ "$RUNNING" == "1" ]];  do
 
 		[[ "$?" != 0 ]] && exit
 
+		DONE=0
+
 		# Prepare answer
 		# Gets:
 		#	msg, 
@@ -225,6 +228,7 @@ while [[ "$RUNNING" == "1" ]];  do
 		elif [[ ${dhcp_opt_data[53]} == "03 " ]]; then
 			echo "DHCPREQUEST from $chaddr"
 			dhcp_answer_ack
+			DONE=1
 		else
 			exit
 		fi
@@ -232,5 +236,10 @@ while [[ "$RUNNING" == "1" ]];  do
 		# Gets:
 		#	msg, raw_opt
 		write_dhcp
+
+		if [[ "$DONE" == "1" ]]; then
+			echo "$CLIENT/$NETMASK given to $chaddr"
+			kill -INT $$
+		fi
 	}
 done
