@@ -5,8 +5,16 @@ DEBUG=1
 
 # Server ip
 SERVER="192.168.45.1"
+# Netmask for client
 NETMASK="255.255.255.0"
+# Proposed ip
 CLIENT="192.168.45.101"
+# Gateway ip
+GATEWAY="$SERVER"
+# Lease time in seconds
+LEASE_TIME=500
+# Convert to 32-bit hex
+LEASE_TIME=$(printf "%08X" $LEASE_TIME)
 
 # SIGINT from parent or child cause stopping
 RUNNING=1
@@ -108,9 +116,9 @@ while [[ "$RUNNING" == "1" ]];  do
 					# Netmask 
 					"01" "04" $(printf "%02X" $(echo $NETMASK | cut -d. -f1)) $(printf "%02X" $(echo $NETMASK | cut -d. -f2)) $(printf "%02X" $(echo $NETMASK | cut -d. -f3)) $(printf "%02X" $(echo $NETMASK | cut -d. -f4))
 					# Lease time in seconds
-					"33" "04" "00" "00" "00" "FF"
+					"33" "04" $(echo $LEASE_TIME | cut -b1,2) $(echo $LEASE_TIME | cut -b3,4) $(echo $LEASE_TIME | cut -b5,6) $(echo $LEASE_TIME | cut -b7,8)
 					# DHCP Server ip
-					"36" "04" "C0" "A8" "2B" "01"
+					"36" "04" $(printf "%02X" $(echo $SERVER | cut -d. -f1)) $(printf "%02X" $(echo $SERVER | cut -d. -f2)) $(printf "%02X" $(echo $SERVER | cut -d. -f3)) $(printf "%02X" $(echo $SERVER | cut -d. -f4))
 					# End 
 					"FF" "00"
 			)
@@ -134,9 +142,9 @@ while [[ "$RUNNING" == "1" ]];  do
 					# Netmask 
 					"01" "04" $(printf "%02X" $(echo $NETMASK | cut -d. -f1)) $(printf "%02X" $(echo $NETMASK | cut -d. -f2)) $(printf "%02X" $(echo $NETMASK | cut -d. -f3)) $(printf "%02X" $(echo $NETMASK | cut -d. -f4))
 					# Lease time in seconds
-					"33" "04" "00" "00" "00" "FF"
+					"33" "04" $(echo $LEASE_TIME | cut -b1,2) $(echo $LEASE_TIME | cut -b3,4) $(echo $LEASE_TIME | cut -b5,6) $(echo $LEASE_TIME | cut -b7,8)
 					# DHCP Server ip
-					"36" "04" "C0" "A8" "2B" "01"
+					"36" "04" $(printf "%02X" $(echo $SERVER | cut -d. -f1)) $(printf "%02X" $(echo $SERVER | cut -d. -f2)) $(printf "%02X" $(echo $SERVER | cut -d. -f3)) $(printf "%02X" $(echo $SERVER | cut -d. -f4))
 					# End 
 					"FF" "00"
 			)
