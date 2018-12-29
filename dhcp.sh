@@ -1,38 +1,46 @@
 #!/bin/bash
 
+# SIGINT from parent or child cause stopping
 RUNNING=1
 trap "{ RUNNING=0; echo Stopped.; }" SIGINT
 
+# Handle requests while server is running
 while [[ "$RUNNING" == "1" ]];  do
-	echo "Magic: $MAGIC"
+	# One netcat handles only one broadcast packet
 	nc -l 0.0.0.0 -up 67 -w0 | stdbuf -o0 od -v -w1 -t x1 -An | {
+		# Read beginnig with constant size
 		msg=()
 		for i in {0..239}; do
 			read -r tmp
 			msg[$i]=$tmp
 		done
 	
-		echo ${msg[*]}
-	
+		# echo ${msg[*]}
+		
+		# Check if there are magic cookie that means optional part of DHCP packet
 		if [[ "${msg[236]}${msg[237]}${msg[238]}${msg[239]}" == "63825363" ]]; then
 			DHCP_53=0
 	
+			# Read options until DHCP Option 255 is reached
 			op=0
 			while [[ $op != 'ff' ]]; do
 				read -r op
 				read -r len
 				dec_len=$((16#$len))
-				echo "op: $((16#$op)), len $len, dec_len $dec_len"
+				# echo "op: $((16#$op)), len $len, dec_len $dec_len"
+
 				if [[ "$op" == 35 ]]; then 
+					# Save DHCP Message type for future use
 					read -r DHCP_53
 					echo "DHCP Message type: $DHCP_53"
-				elif [[ $len > 0 ]]; then
+				elif [[ $len > 0 ]]; then 
+					# Just read option data and store it in array
 					printf '\t'
 					for i in $(seq 0 $(($dec_len-1))); do
 						read -r data
-						printf "%s " $data
+						#printf "%s " $data
 					done
-					echo
+					# echo
 				fi
 			done
 		fi
