@@ -1,6 +1,11 @@
 #!/bin/bash
-while true; do
-	nc -l 0.0.0.0 -up 67 -w0 | stdbuf -o0 od -v -w1 -t x1 -An | (
+
+RUNNING=1
+trap "{ RUNNING=0; echo Stopped.; }" SIGINT
+
+while [[ "$RUNNING" == "1" ]];  do
+	echo "Magic: $MAGIC"
+	nc -l 0.0.0.0 -up 67 -w0 | stdbuf -o0 od -v -w1 -t x1 -An | {
 		msg=()
 		for i in {0..239}; do
 			read -r tmp
@@ -91,8 +96,8 @@ while true; do
 				echo "Saved."
 				cat /tmp/dhcp.payload | nc -ub 255.255.255.255 68 -s 192.168.43.1 -p 67 -w0
 				echo "Sent."
-				exit
+				kill -INT $$
 			;;
 		esac
-	)
+	}
 done
