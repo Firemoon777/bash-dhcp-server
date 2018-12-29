@@ -4,8 +4,9 @@
 DEBUG=1
 
 # Server ip
-SERVER="192.168.43.1"
-CLIENT="192.168.43.100"
+SERVER="192.168.45.1"
+NETMASK="255.255.255.0"
+CLIENT="192.168.45.101"
 
 # SIGINT from parent or child cause stopping
 RUNNING=1
@@ -82,91 +83,107 @@ while [[ "$RUNNING" == "1" ]];  do
 
 		}
 
+		function dhcp_answer_offer() {
+			# Set first byte to BOOTREPLY
+			msg[0]="02"
 
-	
-		# Sets msg, dhcp_opt_key, dhcp_opt_len, dhcp_opt_data
+			#Set proposed address to yiaddr field
+			msg[16]=$(printf "%02X" $(echo $CLIENT | cut -d. -f1))
+			msg[17]=$(printf "%02X" $(echo $CLIENT | cut -d. -f2))
+			msg[18]=$(printf "%02X" $(echo $CLIENT | cut -d. -f3))
+			msg[19]=$(printf "%02X" $(echo $CLIENT | cut -d. -f4))
+
+			#Set dhcp server address to siaddr field
+			msg[20]=$(printf "%02X" $(echo $SERVER | cut -d. -f1))
+			msg[21]=$(printf "%02X" $(echo $SERVER | cut -d. -f2))
+			msg[22]=$(printf "%02X" $(echo $SERVER | cut -d. -f3))
+			msg[23]=$(printf "%02X" $(echo $SERVER | cut -d. -f4))
+
+			raw_opt=(
+					# Set "magic" cookie
+					"63" "82" "53" "63"
+					# "op" "len" "data", "data", ...
+					# DHCP Message type OFFER	
+					"35" "01" "02" 
+					# Netmask 
+					"01" "04" $(printf "%02X" $(echo $NETMASK | cut -d. -f1)) $(printf "%02X" $(echo $NETMASK | cut -d. -f2)) $(printf "%02X" $(echo $NETMASK | cut -d. -f3)) $(printf "%02X" $(echo $NETMASK | cut -d. -f4))
+					# Lease time in seconds
+					"33" "04" "00" "00" "00" "FF"
+					# DHCP Server ip
+					"36" "04" "C0" "A8" "2B" "01"
+					# End 
+					"FF" "00"
+			)
+		}
+
+		function dhcp_answer_ack() {
+			# Set first byte to BOOTREPLY
+			msg[0]="02"
+
+			#Set proposed address to yiaddr field
+			msg[16]=$(printf "%02X" $(echo $CLIENT | cut -d. -f1))
+			msg[17]=$(printf "%02X" $(echo $CLIENT | cut -d. -f2))
+			msg[18]=$(printf "%02X" $(echo $CLIENT | cut -d. -f3))
+			msg[19]=$(printf "%02X" $(echo $CLIENT | cut -d. -f4))
+			raw_opt=(
+					# Set "magic" cookie
+					"63" "82" "53" "63"
+					# "op" "len" "data", "data", ...
+					# DHCP Message type ACK	
+					"35" "01" "05" 
+					# Netmask 
+					"01" "04" $(printf "%02X" $(echo $NETMASK | cut -d. -f1)) $(printf "%02X" $(echo $NETMASK | cut -d. -f2)) $(printf "%02X" $(echo $NETMASK | cut -d. -f3)) $(printf "%02X" $(echo $NETMASK | cut -d. -f4))
+					# Lease time in seconds
+					"33" "04" "00" "00" "00" "FF"
+					# DHCP Server ip
+					"36" "04" "C0" "A8" "2B" "01"
+					# End 
+					"FF" "00"
+			)
+		}
+
+		function write_dhcp() {
+				echo ${msg[*]} 
+				echo ${raw_opt[*]}
+
+				>/tmp/dhcp.payload
+				for i in $(seq 0 $((${#msg[*]}-1))); do
+					printf "\x${msg[i]}" >> /tmp/dhcp.payload 	
+			    done
+				for i in $(seq 0 $((${#raw_opt[*]}-1))); do
+					printf "\x${raw_opt[i]}" >> /tmp/dhcp.payload	
+			    done
+				cat /tmp/dhcp.payload | nc -ub 255.255.255.255 68 -s $SERVER -p 67 -w0
+				[[ "$DEBUG" == "1" ]] && rm /tmp/dhcp.payload
+		}
+
+		# Sets:
+		#	msg, 
+		#	dhcp_opt_key, dhcp_opt_len, dhcp_opt_data
+		#	xid, chaddr
 		read_dhcp
 
 		[[ "$?" != 0 ]] && exit
 
+		# Prepare answer
+		# Gets:
+		#	msg, 
+		#	dhcp_opt_key, dhcp_opt_len, dhcp_opt_data
+		#	xid, chaddr
+		# Sets:
+		# 	msg, raw_opt
 		if [[ "${dhcp_opt_data[53]}" == "01 " ]]; then
-			echo "DISCOVER"
+			echo "DHCPDISCOVER from $chaddr"
+			dhcp_answer_offer
+		elif [[ ${dhcp_opt_data[53]} == "03 " ]]; then
+			echo "DHCPREQUEST from $chaddr"
+			dhcp_answer_ack
+		else
+			exit
 		fi
 
-		if [[ ${dhcp_opt_data[53]} == "03 " ]]; then
-			echo "REQUEST"
-		fi
-		
-		exit
-		# Check if there are magic cookie that means optional part of DHCP packet
-		if [[ "${msg[236]}${msg[237]}${msg[238]}${msg[239]}" == "63825363" ]]; then
-			DHCP_53=0
-	
-			# Read options until DHCP Option 255 is reached
-			op=0
-		fi
-	
-		options=()
-	
-		case $DHCP_53 in
-			"01")
-				echo "DISCOVER"
-				msg[0]="02"
-				msg[16]="C0"
-				msg[17]="A8"
-				msg[18]="2B"
-				msg[19]="64"
-	
-				msg[20]="C0"
-				msg[21]="A8"
-				msg[22]="2B"
-				msg[23]="01"
-				echo ${msg[*]}
-	
-				opt=(
-					"35" "01" "02" 
-					"01" "04" "FF" "FF" "FF" "00"
-					"33" "04" "00" "00" "00" "FF"
-					"36" "04" "C0" "A8" "2B" "01"
-					"FF" "00"
-				)
-				>/tmp/dhcp.payload
-				for i in $(seq 0 $((${#msg[*]}-1))); do
-					printf "\x${msg[i]}" >> /tmp/dhcp.payload 	
-			    done
-				for i in $(seq 0 $((${#opt[*]}-1))); do
-					printf "\x${opt[i]}" >> /tmp/dhcp.payload	
-			    done
-				echo "Saved."
-				cat /tmp/dhcp.payload | nc -ub 255.255.255.255 68 -s 192.168.43.1 -p 67 -w0
-				echo "Sent."
-			;;
-			"03") 
-				echo "REQUEST"	
-				msg[0]="02"
-				msg[16]="C0"
-				msg[17]="A8"
-				msg[18]="2B"
-				msg[19]="64"
-				opt=(
-					"35" "01" "05" 
-					"01" "04" "FF" "FF" "FF" "00"
-					"33" "04" "00" "00" "00" "FF"
-					"36" "04" "C0" "A8" "2B" "01"
-					"FF" "00"
-				)
-				>/tmp/dhcp.payload
-				for i in $(seq 0 $((${#msg[*]}-1))); do
-					printf "\x${msg[i]}" >> /tmp/dhcp.payload 	
-			    done
-				for i in $(seq 0 $((${#opt[*]}-1))); do
-					printf "\x${opt[i]}" >> /tmp/dhcp.payload	
-			    done
-				echo "Saved."
-				cat /tmp/dhcp.payload | nc -ub 255.255.255.255 68 -s 192.168.43.1 -p 67 -w0
-				echo "Sent."
-				kill -INT $$
-			;;
-		esac
+		# Gets:
+		#	msg, raw_opt
+		write_dhcp
 	}
 done
