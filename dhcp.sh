@@ -14,6 +14,8 @@ GATEWAY="$SERVER"
 # Lease time in seconds
 LEASE_TIME=500
 
+NC=${NC:-/bin/nc}
+
 while getopts "s:m:i:g:l:hd" opt; do
 	case $opt in
 		s)
@@ -51,6 +53,16 @@ while getopts "s:m:i:g:l:hd" opt; do
 		;;
 	esac
 done
+
+if [[ $($NC -h 2>&1 | head -1 | grep -q OpenBSD; echo $?) == "1" ]]; then 
+	echo "Not supported nc."
+	echo "This solution works only with OpenBSD netcat."
+	echo "Your netcat: $NC"
+	echo "You can use alternative with variable NC"
+	echo "Example:"
+	echo -e "\tNC=/usr/local/bin/nc $0"
+	exit	
+fi
 
 # Convert to 32-bit hex
 LEASE_TIME=$(printf "%08X" $LEASE_TIME)
