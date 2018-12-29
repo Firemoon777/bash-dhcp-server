@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Enable debug output
-DEBUG=1
+DEBUG=0
 
 # Server ip
 SERVER="192.168.45.1"
@@ -13,6 +13,41 @@ CLIENT="192.168.45.101"
 GATEWAY="$SERVER"
 # Lease time in seconds
 LEASE_TIME=500
+
+while getopts "s:m:i:g:l:h" opt; do
+	case $opt in
+		s)
+
+		;;
+		m)
+
+		;;
+		i)
+
+		;;
+		g)
+
+		;;
+		l)
+
+		;;
+		h)
+			echo -e "Usage: $0 [option]..."
+			echo -e "\t-s <ip>   set server's ip (default $CLIENT)"
+			echo -e "\t-m <ip>   set netmask (default $NETMASK)"
+			echo -e "\t-i <ip>   set ip address, proposed to client with dhcp (default $CLIENT)"
+			echo -e "\t-g <ip>   set gateway (default $GATEWAY)"
+			echo -e "\t-l <time> set lease time (default $LEASE_TIME)"
+			echo -e "\t-h <ip>   show this help"
+			exit
+		;;
+		*)
+			echo -e "Help:\n\t$0 -h";
+			exit
+		;;
+	esac
+done
+
 # Convert to 32-bit hex
 LEASE_TIME=$(printf "%08X" $LEASE_TIME)
 
