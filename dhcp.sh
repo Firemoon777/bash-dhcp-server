@@ -111,6 +111,8 @@ while [[ "$RUNNING" == "1" ]];  do
 					# Set "magic" cookie
 					"63" "82" "53" "63"
 					# "op" "len" "data", "data", ...
+					# Gateway
+					"03" "04" $(printf "%02X" $(echo $GATEWAY | cut -d. -f1)) $(printf "%02X" $(echo $GATEWAY | cut -d. -f2)) $(printf "%02X" $(echo $GATEWAY | cut -d. -f3)) $(printf "%02X" $(echo $GATEWAY | cut -d. -f4))
 					# DHCP Message type OFFER	
 					"35" "01" "02" 
 					# Netmask 
@@ -137,6 +139,8 @@ while [[ "$RUNNING" == "1" ]];  do
 					# Set "magic" cookie
 					"63" "82" "53" "63"
 					# "op" "len" "data", "data", ...
+					# Gateway
+					"03" "04" $(printf "%02X" $(echo $GATEWAY | cut -d. -f1)) $(printf "%02X" $(echo $GATEWAY | cut -d. -f2)) $(printf "%02X" $(echo $GATEWAY | cut -d. -f3)) $(printf "%02X" $(echo $GATEWAY | cut -d. -f4))
 					# DHCP Message type ACK	
 					"35" "01" "05" 
 					# Netmask 
