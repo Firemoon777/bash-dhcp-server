@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Enable debug output
+DEBUG=1
+
+# Server ip
+SERVER="192.168.43.1"
+CLIENT="192.168.43.100"
+
 # SIGINT from parent or child cause stopping
 RUNNING=1
 trap "{ RUNNING=0; echo Stopped.; }" SIGINT
@@ -8,41 +15,95 @@ trap "{ RUNNING=0; echo Stopped.; }" SIGINT
 while [[ "$RUNNING" == "1" ]];  do
 	# One netcat handles only one broadcast packet
 	nc -l 0.0.0.0 -up 67 -w0 | stdbuf -o0 od -v -w1 -t x1 -An | {
-		# Read beginnig with constant size
-		msg=()
-		for i in {0..239}; do
-			read -r tmp
-			msg[$i]=$tmp
-		done
+
+		function read_dhcp() {
+			# Read beginnig with constant size
+			msg=()
+			for i in {0..235}; do
+				read -r tmp
+				msg[$i]=$tmp
+			done
+
+			# Get unique request id
+			for i in $(seq 4 7); do
+				xid=${xid}${msg[i]}
+			done
+
+			# Get hardware addr
+			chaddr=${msg[28]}
+			for i in $(seq 29 $((28+16#${msg[2]}-1))); do
+				chaddr=${chaddr}:${msg[i]}
+			done
+
+			# Attempt to read cookie
+			cookie=()
+			for i in {0..3}; do
+				read -r tmp
+				cookie[$i]=$tmp
+			done
+
+			# Read DHCP options if available
+			dhcp_opt_keys=""
+			dhcp_opt_data=()
+			dhcp_opt_len=()
+			if [[ "${cookie[0]}${cookie[1]}${cookie[2]}${cookie[3]}" == "63825363" ]]; then
+				while [[ $op != '255' ]]; do
+					read -r op
+					read -r len
+					# Convert from hex to dec
+					op=$((16#$op))
+					len=$((16#$len))
+					dhcp_opt_keys="$dhcp_opt_keys$op "
+					dhcp_opt_len[$op]=$len
+					for i in $(seq 0 $(($len-1))); do
+						read -r data
+						dhcp_opt_data[$op]="${dhcp_opt_data[$op]}$data "
+					done
+				done
+			fi
+			
+			if [[ "$DEBUG" == "1" ]]; then
+				echo "Packet:"; echo ${msg[*]}
+				echo "xid: $xid"
+				echo "chaddr: $chaddr"
+				echo "Options:"
+				for i in $dhcp_opt_keys; do
+					echo "Option $i length ${dhcp_opt_len[i]}"
+					[[ ${dhcp_opt_len[i]} != "0" ]] && echo -e "\tData: ${dhcp_opt_data[i]}"
+				done
+			fi	
+
+			# Check, if packet if BOOTREQUEST
+			if [[ "${msg[1]}" != "01" ]]; then
+				return 1
+			fi
+
+			return 0
+
+		}
+
+
 	
-		# echo ${msg[*]}
+		# Sets msg, dhcp_opt_key, dhcp_opt_len, dhcp_opt_data
+		read_dhcp
+
+		[[ "$?" != 0 ]] && exit
+
+		if [[ "${dhcp_opt_data[53]}" == "01 " ]]; then
+			echo "DISCOVER"
+		fi
+
+		if [[ ${dhcp_opt_data[53]} == "03 " ]]; then
+			echo "REQUEST"
+		fi
 		
+		exit
 		# Check if there are magic cookie that means optional part of DHCP packet
 		if [[ "${msg[236]}${msg[237]}${msg[238]}${msg[239]}" == "63825363" ]]; then
 			DHCP_53=0
 	
 			# Read options until DHCP Option 255 is reached
 			op=0
-			while [[ $op != 'ff' ]]; do
-				read -r op
-				read -r len
-				dec_len=$((16#$len))
-				# echo "op: $((16#$op)), len $len, dec_len $dec_len"
-
-				if [[ "$op" == 35 ]]; then 
-					# Save DHCP Message type for future use
-					read -r DHCP_53
-					echo "DHCP Message type: $DHCP_53"
-				elif [[ $len > 0 ]]; then 
-					# Just read option data and store it in array
-					printf '\t'
-					for i in $(seq 0 $(($dec_len-1))); do
-						read -r data
-						#printf "%s " $data
-					done
-					# echo
-				fi
-			done
 		fi
 	
 		options=()
