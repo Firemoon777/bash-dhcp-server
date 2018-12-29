@@ -64,6 +64,11 @@ if [[ $($NC -h 2>&1 | head -1 | grep -q OpenBSD; echo $?) == "1" ]]; then
 	exit	
 fi
 
+if [[ $(id -u) -ne 0 ]]; then
+	echo "Please, run as root"	
+	exit
+fi
+
 # Convert to 32-bit hex
 LEASE_TIME=$(printf "%08X" $LEASE_TIME)
 
