@@ -15,6 +15,7 @@ Version: 1.0
 Maintainer: Vladimir Turov
 Architecture: all
 Description: bash-based dhcp-server
+Depends: netcat-openbsd (>= 1.130)
 EOF
 
 dpkg-deb --build $PACKAGE && rm -rf $PACKAGE
