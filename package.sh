@@ -11,7 +11,7 @@ cp dhcp.sh $PACKAGE/usr/sbin/$PACKAGE
 
 cat > $PACKAGE/DEBIAN/control <<EOF
 Package: $PACKAGE
-Version: 1.0
+Version: 1.2
 Maintainer: Vladimir Turov
 Architecture: all
 Description: bash-based dhcp-server
