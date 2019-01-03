@@ -1,5 +1,7 @@
 #!/bin/bash
 
+VERSION="1.2"
+
 # Enable debug output
 DEBUG=0
 
@@ -37,6 +39,7 @@ while getopts "s:m:i:g:l:hd" opt; do
 			DEBUG=1
 		;;
 		h)
+			echo -e "bash-dhcp-server $VERSION"
 			echo -e "Usage: $0 [option]..."
 			echo -e "\t-s <ip>   set server's ip (default $CLIENT)"
 			echo -e "\t-m <ip>   set netmask (default $NETMASK)"
@@ -75,6 +78,8 @@ LEASE_TIME=$(printf "%08X" $LEASE_TIME)
 # SIGINT from parent or child cause stopping
 RUNNING=1
 trap "{ RUNNING=0; echo Stopped.; }" SIGINT
+
+echo "Started"
 
 # Handle requests while server is running
 while [[ "$RUNNING" == "1" ]];  do
