@@ -31,4 +31,4 @@ Usage: ./dhcp.sh [option]...
 ```
 
 Server quits after `DHCPACK` is sent. 
-So, if there are many `DHCPDISCOVER'ing devices in network, ip address would be assigned to fastest one.
+So, if there are many `DHCPDISCOVER`ing devices in network, ip address would be assigned to fastest one.
