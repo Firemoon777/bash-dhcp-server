@@ -217,11 +217,11 @@ while [[ "$RUNNING" == "1" ]];  do
 
 		function write_dhcp() {
 				>/tmp/dhcp.payload
-				for i in $(seq 0 $((${#msg[*]}-1))); do
-					printf "\x${msg[i]}" >> /tmp/dhcp.payload 	
+				for i in ${msg[*]}; do
+					printf "\x$i" >> /tmp/dhcp.payload 	
 	     			done
-				for i in $(seq 0 $((${#raw_opt[*]}-1))); do
-					printf "\x${raw_opt[i]}" >> /tmp/dhcp.payload	
+				for i in ${raw_opt[*]}; do
+					printf "\x$i" >> /tmp/dhcp.payload	
 				done
 				cat /tmp/dhcp.payload | nc -ub 255.255.255.255 68 -s $SERVER -p 67 -w0
 				[[ "$DEBUG" != "1" ]] && rm /tmp/dhcp.payload
