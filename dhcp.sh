@@ -219,12 +219,12 @@ while [[ "$RUNNING" == "1" ]];  do
 				>/tmp/dhcp.payload
 				for i in $(seq 0 $((${#msg[*]}-1))); do
 					printf "\x${msg[i]}" >> /tmp/dhcp.payload 	
-			    done
+	     			done
 				for i in $(seq 0 $((${#raw_opt[*]}-1))); do
 					printf "\x${raw_opt[i]}" >> /tmp/dhcp.payload	
-			    done
+				done
 				cat /tmp/dhcp.payload | nc -ub 255.255.255.255 68 -s $SERVER -p 67 -w0
-				[[ "$DEBUG" == "1" ]] && rm /tmp/dhcp.payload
+				[[ "$DEBUG" != "1" ]] && rm /tmp/dhcp.payload
 		}
 
 		# Sets:
