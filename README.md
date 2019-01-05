@@ -2,7 +2,7 @@
 
 Simple DHCP server based on OpenBSD and bash programming. 
 bash-dhcp-server suitable **only** for assigning IP address in networks with single host sending DHCP Discover. 
-This dhcp-server is **NOT** fit RFC2132, but still able to assign and renew IP addresses in small or temporary networks. 
+This dhcp-server is **NOT** fit RFC2131/RFC2132, but still able to assign and renew IP addresses in small or temporary networks. 
 
 Developed just for fun.
 
