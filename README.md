@@ -26,6 +26,7 @@ Usage: ./dhcp.sh [option]...
 	-i <ip>   set ip address, proposed to client with dhcp (default 192.168.45.101)
 	-g <ip>   set gateway (default 192.168.45.1)
 	-l <time> set lease time (default 500)
+	-p <interface> set server's ip on an interface
 	-h        show this help
 	-d        enable debug output
 ```
