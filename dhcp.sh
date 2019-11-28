@@ -96,7 +96,7 @@ while [[ "$RUNNING" == "1" ]];  do
 	nc -lup 67 -w0 | stdbuf -o0 od -v -w1 -t x1 -An | {
 
 		function read_dhcp() {
-			# Read beginnig with constant size
+			# Read beginning with constant size
 			msg=()
 			for i in {0..235}; do
 				read -r tmp
@@ -152,7 +152,7 @@ while [[ "$RUNNING" == "1" ]];  do
 				done
 			fi	
 
-			# Check, if packet if BOOTREQUEST
+			# Check, if packet is BOOTREQUEST
 			if [[ "${msg[1]}" != "01" ]]; then
 				return 1
 			fi
@@ -165,13 +165,13 @@ while [[ "$RUNNING" == "1" ]];  do
 			# Set first byte to BOOTREPLY
 			msg[0]="02"
 
-			#Set proposed address to yiaddr field
+			# Set proposed address to yiaddr field
 			msg[16]=$(printf "%02X" $(echo $CLIENT | cut -d. -f1))
 			msg[17]=$(printf "%02X" $(echo $CLIENT | cut -d. -f2))
 			msg[18]=$(printf "%02X" $(echo $CLIENT | cut -d. -f3))
 			msg[19]=$(printf "%02X" $(echo $CLIENT | cut -d. -f4))
 
-			#Set dhcp server address to siaddr field
+			# Set dhcp server address to siaddr field
 			msg[20]=$(printf "%02X" $(echo $SERVER | cut -d. -f1))
 			msg[21]=$(printf "%02X" $(echo $SERVER | cut -d. -f2))
 			msg[22]=$(printf "%02X" $(echo $SERVER | cut -d. -f3))
@@ -200,7 +200,7 @@ while [[ "$RUNNING" == "1" ]];  do
 			# Set first byte to BOOTREPLY
 			msg[0]="02"
 
-			#Set proposed address to yiaddr field
+			# Set proposed address to yiaddr field
 			msg[16]=$(printf "%02X" $(echo $CLIENT | cut -d. -f1))
 			msg[17]=$(printf "%02X" $(echo $CLIENT | cut -d. -f2))
 			msg[18]=$(printf "%02X" $(echo $CLIENT | cut -d. -f3))
