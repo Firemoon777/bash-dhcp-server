@@ -18,7 +18,7 @@ LEASE_TIME=500
 
 NC=${NC:-/bin/nc}
 
-while getopts "s:m:i:g:l:hd" opt; do
+while getopts "s:m:i:g:l:p:hd" opt; do
 	case $opt in
 		s)
 			SERVER=$OPTARG
@@ -35,6 +35,9 @@ while getopts "s:m:i:g:l:hd" opt; do
 		l)
 			LEASE_TIME=$OPTARG
 		;;
+		p)
+			INTERFACE=$OPTARG
+		;;
 		d)
 			DEBUG=1
 		;;
@@ -46,6 +49,7 @@ while getopts "s:m:i:g:l:hd" opt; do
 			echo -e "\t-i <ip>   set ip address, proposed to client with dhcp (default $CLIENT)"
 			echo -e "\t-g <ip>   set gateway (default $GATEWAY)"
 			echo -e "\t-l <time> set lease time (default $LEASE_TIME)"
+			echo -e "\t-p <interface> set server's ip on an interface"
 			echo -e "\t-h        show this help"
 			echo -e "\t-d        enable debug output"
 			exit
@@ -80,6 +84,11 @@ RUNNING=1
 trap "{ RUNNING=0; echo Stopped.; }" SIGINT
 
 echo "Started"
+
+if [ -n "$INTERFACE" ]; then
+	echo "Add $SERVER to $INTERFACE"
+	ip addr add $SERVER/24 dev $INTERFACE
+fi
 
 # Handle requests while server is running
 while [[ "$RUNNING" == "1" ]];  do
