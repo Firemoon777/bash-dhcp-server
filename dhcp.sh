@@ -18,7 +18,7 @@ LEASE_TIME=500
 
 NC=${NC:-/bin/nc}
 
-while getopts "s:m:i:g:l:hd" opt; do
+while getopts "s:m:i:g:l:p:hd" opt; do
 	case $opt in
 		s)
 			SERVER=$OPTARG
@@ -35,6 +35,9 @@ while getopts "s:m:i:g:l:hd" opt; do
 		l)
 			LEASE_TIME=$OPTARG
 		;;
+		p)
+			INTERFACE=$OPTARG
+		;;
 		d)
 			DEBUG=1
 		;;
@@ -46,6 +49,7 @@ while getopts "s:m:i:g:l:hd" opt; do
 			echo -e "\t-i <ip>   set ip address, proposed to client with dhcp (default $CLIENT)"
 			echo -e "\t-g <ip>   set gateway (default $GATEWAY)"
 			echo -e "\t-l <time> set lease time (default $LEASE_TIME)"
+			echo -e "\t-p <interface> set server's ip on an interface"
 			echo -e "\t-h        show this help"
 			echo -e "\t-d        enable debug output"
 			exit
@@ -81,13 +85,18 @@ trap "{ RUNNING=0; echo Stopped.; }" SIGINT
 
 echo "Started"
 
+if [ -n "$INTERFACE" ]; then
+	echo "Add $SERVER to $INTERFACE"
+	ip addr add $SERVER/24 dev $INTERFACE
+fi
+
 # Handle requests while server is running
 while [[ "$RUNNING" == "1" ]];  do
 	# One netcat handles only one broadcast packet
-	nc -l 0.0.0.0 -up 67 -w0 | stdbuf -o0 od -v -w1 -t x1 -An | {
+	nc -lup 67 -w0 | stdbuf -o0 od -v -w1 -t x1 -An | {
 
 		function read_dhcp() {
-			# Read beginnig with constant size
+			# Read beginning with constant size
 			msg=()
 			for i in {0..235}; do
 				read -r tmp
@@ -143,7 +152,7 @@ while [[ "$RUNNING" == "1" ]];  do
 				done
 			fi	
 
-			# Check, if packet if BOOTREQUEST
+			# Check, if packet is BOOTREQUEST
 			if [[ "${msg[1]}" != "01" ]]; then
 				return 1
 			fi
@@ -156,13 +165,13 @@ while [[ "$RUNNING" == "1" ]];  do
 			# Set first byte to BOOTREPLY
 			msg[0]="02"
 
-			#Set proposed address to yiaddr field
+			# Set proposed address to yiaddr field
 			msg[16]=$(printf "%02X" $(echo $CLIENT | cut -d. -f1))
 			msg[17]=$(printf "%02X" $(echo $CLIENT | cut -d. -f2))
 			msg[18]=$(printf "%02X" $(echo $CLIENT | cut -d. -f3))
 			msg[19]=$(printf "%02X" $(echo $CLIENT | cut -d. -f4))
 
-			#Set dhcp server address to siaddr field
+			# Set dhcp server address to siaddr field
 			msg[20]=$(printf "%02X" $(echo $SERVER | cut -d. -f1))
 			msg[21]=$(printf "%02X" $(echo $SERVER | cut -d. -f2))
 			msg[22]=$(printf "%02X" $(echo $SERVER | cut -d. -f3))
@@ -191,7 +200,7 @@ while [[ "$RUNNING" == "1" ]];  do
 			# Set first byte to BOOTREPLY
 			msg[0]="02"
 
-			#Set proposed address to yiaddr field
+			# Set proposed address to yiaddr field
 			msg[16]=$(printf "%02X" $(echo $CLIENT | cut -d. -f1))
 			msg[17]=$(printf "%02X" $(echo $CLIENT | cut -d. -f2))
 			msg[18]=$(printf "%02X" $(echo $CLIENT | cut -d. -f3))
