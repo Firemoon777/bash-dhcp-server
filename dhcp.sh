@@ -93,7 +93,7 @@ fi
 # Handle requests while server is running
 while [[ "$RUNNING" == "1" ]];  do
 	# One netcat handles only one broadcast packet
-	"$NC" -lup 67 -w0 | stdbuf -o0 od -v -w1 -t x1 -An | {
+	"$NC" -ul 67 -w0 | stdbuf -o0 od -v -w1 -t x1 -An | {
 
 		function read_dhcp() {
 			# Read beginning with constant size
