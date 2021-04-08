@@ -93,7 +93,7 @@ fi
 # Handle requests while server is running
 while [[ "$RUNNING" == "1" ]];  do
 	# One netcat handles only one broadcast packet
-	nc -lup 67 -w0 | stdbuf -o0 od -v -w1 -t x1 -An | {
+	"$NC" -lup 67 -w0 | stdbuf -o0 od -v -w1 -t x1 -An | {
 
 		function read_dhcp() {
 			# Read beginning with constant size
@@ -232,7 +232,7 @@ while [[ "$RUNNING" == "1" ]];  do
 				for i in ${raw_opt[*]}; do
 					printf "\x$i" >> /tmp/dhcp.payload	
 				done
-				cat /tmp/dhcp.payload | nc -ub 255.255.255.255 68 -s $SERVER -p 67 -w0
+				cat /tmp/dhcp.payload | "$NC" -ub 255.255.255.255 68 -s $SERVER -p 67 -w0
 				[[ "$DEBUG" != "1" ]] && rm /tmp/dhcp.payload
 		}
 
