@@ -61,7 +61,7 @@ while getopts "s:m:i:g:l:p:hd" opt; do
 	esac
 done
 
-if [[ $($NC -h 2>&1 | head -1 | grep -q OpenBSD; echo $?) == "1" ]]; then 
+if [[ $("$NC" -w 0 2>&1 | head -1 | grep -q "nvalid.*time"; echo $?) == "0" ]]; then
 	echo "Not supported nc."
 	echo "This solution works only with OpenBSD netcat."
 	echo "Your netcat: $NC"
